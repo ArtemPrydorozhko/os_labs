@@ -13,7 +13,7 @@ TaskManager::TaskManager(size_t queueAmount, size_t weightStart, size_t weightEn
 	this->intervalStart = intervalStart;
 	this->intervalEnd = intervalEnd;
 	processingTask = false;
-	taskAmount = maxTaskAmount = 0;
+	taskAmount = sleepAmount = 0;
 	queues = vector<list<Task>>(queueAmount);
 	srand(time(0));
 	file.open("data.csv", ios::out | ios::trunc);
@@ -24,6 +24,16 @@ TaskManager::~TaskManager()
 {
 	file.close();
 	file2.close();
+}
+
+void TaskManager::reset(size_t interval)
+{
+	this->intervalEnd = this->intervalStart = interval;
+	tickToAddTask = currentTick = 1;
+	processingTask = false;
+	taskAmount = sleepAmount = 0;
+	queues = vector<list<Task>>(queueAmount);
+	doneTasks = vector<Task>();
 }
 
 void TaskManager::processTick()
@@ -66,6 +76,10 @@ void TaskManager::processTick()
 			processingTask = true;
 			processTask();
 		}
+		else
+		{
+			sleepAmount++;
+		}
 	}
 	
 	currentTick++;
@@ -77,10 +91,6 @@ void TaskManager::addTask()
 	Task task(weight, currentTick);
 	queues[0].push_back(task);
 	taskAmount++;
-	if (taskAmount > maxTaskAmount)
-	{
-		maxTaskAmount = taskAmount;
-	}
 }
 
 void TaskManager::processTask()
@@ -105,7 +115,6 @@ void TaskManager::processTask()
 			queues[currentTask.queueNum].push_back(currentTask);
 		}
 	}
-	saveData();
 }
 
 void TaskManager::updateAwaitingTime()
@@ -121,7 +130,7 @@ void TaskManager::updateAwaitingTime()
 
 void TaskManager::saveData()
 {
-	size_t avAwTime = 0;
+	double avAwTime = 0;
 	for (size_t i = 0; i < doneTasks.size(); i++)
 	{
 		avAwTime += doneTasks[i].awaitTime;
@@ -134,23 +143,42 @@ void TaskManager::saveData()
 		}
 	}
 
-	avAwTime = ceil(avAwTime / ((double)taskAmount + doneTasks.size()));
-	file << currentTick << ';' << taskAmount << ';' << maxTaskAmount << ';' << avAwTime << endl;
+	avAwTime = avAwTime / (taskAmount + doneTasks.size());
+	file << intervalStart << ';' << (long)avAwTime << ';' << (double)sleepAmount / currentTick * 100 << endl;
 }
 
 void TaskManager::saveData2()
 {
+	double avAwTime = 0;
 	for (size_t i = 0; i < doneTasks.size(); i++)
 	{
-		file2 << doneTasks[i].awaitTime << '\n';
+		avAwTime += doneTasks[i].awaitTime;
 	}
 	for (size_t i = 0; i < queues.size(); i++)
 	{
 		for (Task task : queues[i])
 		{
-			file2 << task.awaitTime << '\n';
+			avAwTime += task.awaitTime;
 		}
 	}
 
-	file2.flush();
+	avAwTime = avAwTime / (taskAmount + doneTasks.size());
+	file2 << taskAmount + doneTasks.size() << ';' << (long)avAwTime << endl;
 }
+
+//void TaskManager::saveData2()
+//{
+//	for (size_t i = 0; i < doneTasks.size(); i++)
+//	{
+//		file2 << doneTasks[i].awaitTime << '\n';
+//	}
+//	for (size_t i = 0; i < queues.size(); i++)
+//	{
+//		for (Task task : queues[i])
+//		{
+//			file2 << task.awaitTime << '\n';
+//		}
+//	}
+//
+//	file2.flush();
+//}

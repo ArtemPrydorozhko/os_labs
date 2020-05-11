@@ -28,7 +28,9 @@ public:
 	TaskManager(size_t queuesAm, size_t weightStart, size_t weightEnd, size_t intervalStart, size_t intervalEnd);
 	~TaskManager();
 	void processTick();
+	void saveData();
 	void saveData2();
+	void reset(size_t intervalEnd);
 	size_t currentTick;
 private:
 	std::vector<std::list<Task>> queues;
@@ -36,7 +38,6 @@ private:
 	void addTask();
 	void processTask();
 	void updateAwaitingTime();
-	void saveData();
 	size_t queueAmount;
 	size_t weightStart;
 	size_t weightEnd;
@@ -44,7 +45,7 @@ private:
 	size_t intervalEnd;
 	size_t tickToAddTask;
 	size_t taskAmount;
-	size_t maxTaskAmount;
+	size_t sleepAmount;
 	bool processingTask;
 	Task currentTask;
 	size_t timeToProcessTask;
